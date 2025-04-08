@@ -1,0 +1,26 @@
+{
+    "bot": {
+        "prefix": "!",
+        "language": "en",
+        "timezone": "UTC",
+        "debug_mode": false
+    },
+    "openai": {
+        "model": "gpt-4o-mini",
+        "temperature": 0.7,
+        "max_tokens": 2000,
+        "presence_penalty": 0.6,
+        "frequency_penalty": 0.0
+    },
+    "conversation": {
+        "max_history": 15,
+        "context_window": 8,
+        "auto_summarize": false,
+        "topic_detection": true,
+        "sentiment_tracking": true,
+        "language": "en",
+        "temperature": 0.7,
+        "max_tokens": 2000,
+        "model": "gpt-4o-mini"
+    }
+}
