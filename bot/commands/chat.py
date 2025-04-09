@@ -3,7 +3,24 @@ from discord import app_commands, Interaction, Message
 import logging
 from utils.conversation import ConversationManager
 from utils.user_manager import UserManager
+from utils.discord_utils import send_discord_safe
 from pathlib import Path
+
+# Character limits for responses
+DEFAULT_CHAR_LIMIT = 1800  # Default limit for responses
+EXTENDED_CHAR_LIMIT = DEFAULT_CHAR_LIMIT + 500  # Extended limit when more detail is requested
+
+# Keywords that indicate a request for more detail
+DETAIL_KEYWORDS = [
+    "more detail",
+    "more information",
+    "explain more",
+    "elaborate",
+    "longer answer",
+    "detailed answer",
+    "in depth",
+    "thorough"
+]
 
 class Chat(commands.Cog):
     def __init__(self, bot):
@@ -14,6 +31,41 @@ class Chat(commands.Cog):
         self.user_manager = UserManager(settings_dir=self.settings_dir)
         self.conversation_manager = ConversationManager(settings_dir=str(self.settings_dir))
         self.logger.info("Chat cog initialized")
+
+    def _get_char_limit(self, message: str) -> int:
+        """Determine the character limit based on the message content."""
+        message_lower = message.lower()
+        if any(keyword in message_lower for keyword in DETAIL_KEYWORDS):
+            return EXTENDED_CHAR_LIMIT
+        return DEFAULT_CHAR_LIMIT
+
+    def _get_system_prompt(self, char_limit: int) -> str:
+        """Generate the system prompt with the appropriate character limit."""
+        return (
+            f"You are a helpful AI assistant in a Discord chat. Your responses should be clear, concise, and well-structured, "
+            f"using Discord's official markdown formatting:\n"
+            f"- Headers: Use # for main titles, ## for section headers, ### for subsection headers\n"
+            f"- **Bold**: Use **text** for emphasis and important points\n"
+            f"- *Italic*: Use *text* or _text_ for emphasis\n"
+            f"- __Underline__: Use __text__ for underlining\n"
+            f"- ~~Strikethrough~~: Use ~~text~~ for corrections or outdated information\n"
+            f"- `Code`: Use `text` for inline code, commands, or technical terms\n"
+            f"- ```Code blocks```: Use ``` for multi-line code examples; add language name for syntax highlighting\n"
+            f"- Lists: Use hyphens (-) for bullet points; use 2 spaces before - for nested bullets\n"
+            f"- Numbered lists: Use 1., 2., etc. for steps or ordered points\n"
+            f"- > Blockquote: Use > for single-line quotes\n"
+            f"- >>> Multi-line quote: Use >>> for extended quotes\n"
+            f"- Masked links: Use [text](URL) format\n"
+            f"- Combine formatting: ***bold and italic***, __**underline and bold**__, etc.\n"
+            f"\n"
+            f"Remember:\n"
+            f"- Discord has a 2000 character limit per message\n"
+            f"- Your response must be under {char_limit} characters\n"
+            f"- If someone requests more detail, you can use up to {EXTENDED_CHAR_LIMIT} characters\n"
+            f"- Keep responses focused and well-organized\n"
+            f"- Use appropriate spacing and formatting for readability (e.g., space after # for headers)\n"
+            f"- Don't use more than 3 hashtags (####, #####) as they don't render properly in Discord"
+        )
 
     @commands.Cog.listener()
     async def on_message(self, message: Message):
@@ -44,12 +96,17 @@ class Chat(commands.Cog):
                 if is_mention:
                     content = content.replace(f"<@{self.bot.user.id}>", "").strip()
                 
+                # Determine character limit and system prompt
+                char_limit = self._get_char_limit(content)
+                system_prompt = self._get_system_prompt(char_limit)
+                
                 # Store the user's message and get the conversation
                 conversation = await self.conversation_manager.add_message(
                     user_id=user_id,
                     channel_id=channel_id,
                     content=content,
-                    role="user"
+                    role="user",
+                    system_prompt=system_prompt
                 )
                 
                 if conversation is None:
@@ -69,8 +126,10 @@ class Chat(commands.Cog):
                     return
                 
                 # Format the response in the same style as /ask
-                formatted_response = f"**Question:** {content}\n\n🧠 **Answer:**```markdown\n{response}```"
-                await message.reply(formatted_response)
+                formatted_response = f"**Question:** {content}\n\n🧠 **Answer:**\n{response}"
+                # Only wrap in markdown if the response contains code blocks
+                contains_code = "```" in response
+                await send_discord_safe(message, formatted_response, wrap_in_markdown=contains_code)
                 
             except Exception as e:
                 self.logger.error(f"Error in message handler: {e}", exc_info=True)
@@ -85,12 +144,17 @@ class Chat(commands.Cog):
         channel_id = str(interaction.channel_id)
 
         try:
+            # Determine character limit and system prompt
+            char_limit = self._get_char_limit(prompt)
+            system_prompt = self._get_system_prompt(char_limit)
+            
             # Store the user's message and get the conversation
             conversation = await self.conversation_manager.add_message(
                 user_id=user_id,
                 channel_id=channel_id,
                 content=prompt,
-                role="user"
+                role="user",
+                system_prompt=system_prompt
             )
 
             if conversation is None:
@@ -109,9 +173,11 @@ class Chat(commands.Cog):
                 await interaction.followup.send("❌ Failed to generate a response.")
                 return
 
-            await interaction.followup.send(
-                f"**Question:** {prompt}\n\n🧠 **Answer:**```markdown\n{response}```"
-            )
+            # Format the response and send it safely
+            formatted_response = f"**Question:** {prompt}\n\n🧠 **Answer:**\n{response}"
+            # Only wrap in markdown if the response contains code blocks
+            contains_code = "```" in response
+            await send_discord_safe(interaction, formatted_response, wrap_in_markdown=contains_code)
 
         except Exception as e:
             self.logger.error(f"Error in /ask command: {e}", exc_info=True)

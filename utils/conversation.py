@@ -35,7 +35,8 @@ class ConversationManager:
             "language": "en",
             "temperature": 0.7,
             "max_tokens": 1000,
-            "model": "gpt-4o-mini"
+            "model": "gpt-4o-mini",
+            "system_prompt": "You are a helpful AI assistant. Your responses should be clear and concise."
         }
 
         api_key = os.getenv("OPENAI_API_KEY")
@@ -81,7 +82,7 @@ class ConversationManager:
             self.logger.error(f"Error getting conversation for user {user_id} in channel {channel_id}: {e}", exc_info=True)
             return None
 
-    async def add_message(self, user_id: str, channel_id: str, content: str, role: str = "user", conversation: Optional[Conversation] = None) -> Optional[Conversation]:
+    async def add_message(self, user_id: str, channel_id: str, content: str, role: str = "user", conversation: Optional[Conversation] = None, system_prompt: Optional[str] = None) -> Optional[Conversation]:
         try:
             conversation_id = f"{user_id}_{channel_id}"
             message = Message(
@@ -113,6 +114,10 @@ class ConversationManager:
 
             if "participants" not in conversation.metadata:
                 conversation.metadata["participants"] = set()
+
+            # Update system prompt if provided
+            if system_prompt:
+                conversation.metadata["settings"]["system_prompt"] = system_prompt
 
             conversation.messages.append(message)
             conversation.metadata["participants"].add(role)
@@ -164,8 +169,16 @@ class ConversationManager:
     async def _generate_ai_response(self, conversation: Conversation) -> str:
         try:
             recent_messages = conversation.messages[-5:]
-            messages = [{"role": msg.role, "content": msg.content} for msg in recent_messages]
+            messages = []
+            
+            # Add system prompt if available
             settings = conversation.metadata.get("settings", self.default_settings)
+            system_prompt = settings.get("system_prompt")
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            
+            # Add conversation messages
+            messages.extend([{"role": msg.role, "content": msg.content} for msg in recent_messages])
 
             response = await asyncio.to_thread(
                 openai.ChatCompletion.create,
@@ -214,17 +227,18 @@ class ConversationManager:
             created_at=data["created_at"],
             updated_at=data["updated_at"]
         )
+
     async def reset_conversation(self, user_id: str, channel_id: str) -> None:
-            """
-            Deletes the conversation file for the given user and channel, effectively resetting it.
-            """
-            try:
-                conversation_id = f"{user_id}_{channel_id}"
-                file_path = os.path.join(self.conversations_dir, f"{conversation_id}.json")
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                    self.logger.info(f"Conversation {conversation_id} reset successfully.")
-                else:
-                    self.logger.warning(f"No conversation found to reset for {conversation_id}")
-            except Exception as e:
-                self.logger.error(f"Error resetting conversation {conversation_id}: {e}", exc_info=True)
+        """
+        Deletes the conversation file for the given user and channel, effectively resetting it.
+        """
+        try:
+            conversation_id = f"{user_id}_{channel_id}"
+            file_path = os.path.join(self.conversations_dir, f"{conversation_id}.json")
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                self.logger.info(f"Conversation {conversation_id} reset successfully.")
+            else:
+                self.logger.warning(f"No conversation found to reset for {conversation_id}")
+        except Exception as e:
+            self.logger.error(f"Error resetting conversation {conversation_id}: {e}", exc_info=True)
