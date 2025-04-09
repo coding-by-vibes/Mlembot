@@ -22,7 +22,7 @@ Note: This bot was made mostly with ChatGPT and Cursor as a test to see if it co
 ### 1. Clone the repo and install dependencies
 
 ```bash
-git clone <repo-url>  # Replace <repo-url> with the actual repository URL once on GitHub
+git clone https://github.com/coding-by-vibes/Mlembot.git  # Replace <repo-url> with the actual repository URL once on GitHub
 cd mlembot          # Replace mlembot with your project's root directory name if different
 python -m venv mlembot-env # Using a more distinct venv name like mlembot-env is often clearer
 mlembot-env\Scripts\activate  # On Windows PowerShell/cmd
