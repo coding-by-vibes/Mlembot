@@ -2,13 +2,15 @@
 
 A Discord bot that summarizes articles, YouTube videos, and answers questions using DeepSeek and OpenAI.
 
+Note: This bot was made mostly with ChatGPT and Cursor as a test to see if it could produce working code
+
 ---
 
 ## 🚀 Features
 
 - `/summarize` — Summarize any article or YouTube link with DeepSeek
 - `/ask` — Chat with the bot using OpenAI (remembers your conversation)
-- `/recipe` — Detect and return structured recipes from text or URLs
+- `/recipe` — Detect and return structured recipes from text or URLs (WIP)
 - `/reset` — Clear your conversation history
 
 ---
@@ -55,5 +57,3 @@ Execute the startup script:
 ```
 
 ---
-
-*(Optional: Add sections for Contribution Guidelines, Architecture Overview, etc. as needed)*

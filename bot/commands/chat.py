@@ -48,11 +48,29 @@ class Chat(commands.Cog):
                 await interaction.followup.send("❌ Failed to generate a response.")
                 return
 
-            await interaction.followup.send(f"🧠 **Answer:**```markdown\n{response}```")
+            await interaction.followup.send(
+                f"**Question:** {prompt}\n\n🧠 **Answer:**```markdown\n{response}```"
+            )
 
         except Exception as e:
             self.logger.error(f"Error in /ask command: {e}", exc_info=True)
             await interaction.followup.send(f"❌ Error while generating response: {str(e)}", ephemeral=True)
+
+    # @app_commands.command(name="wipeconvo", description="Clear your chat history with the bot in this channel.")
+    # async def wipeconvo(self, interaction: Interaction):
+    #     await interaction.response.defer(thinking=True)
+
+    #     user_id = str(interaction.user.id)
+    #     channel_id = str(interaction.channel_id)
+
+    #     try:
+    #         await self.conversation_manager.reset_conversation(user_id, channel_id)
+    #         await interaction.followup.send("🧹 Your conversation history has been cleared.")
+    #     except Exception as e:
+    #         self.logger.error(f"Error in /wipeconvo command: {e}", exc_info=True)
+    #         await interaction.followup.send("❌ Failed to clear your conversation.", ephemeral=True)
+
+
 
 async def setup(bot):
     await bot.add_cog(Chat(bot))

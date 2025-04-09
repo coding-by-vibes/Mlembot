@@ -7,3 +7,4 @@ mlembot/
 
 # Application Data / State
 storage/conversations/*.json 
+storage/conversations/conversations/*.json 

@@ -214,3 +214,17 @@ class ConversationManager:
             created_at=data["created_at"],
             updated_at=data["updated_at"]
         )
+    async def reset_conversation(self, user_id: str, channel_id: str) -> None:
+            """
+            Deletes the conversation file for the given user and channel, effectively resetting it.
+            """
+            try:
+                conversation_id = f"{user_id}_{channel_id}"
+                file_path = os.path.join(self.conversations_dir, f"{conversation_id}.json")
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    self.logger.info(f"Conversation {conversation_id} reset successfully.")
+                else:
+                    self.logger.warning(f"No conversation found to reset for {conversation_id}")
+            except Exception as e:
+                self.logger.error(f"Error resetting conversation {conversation_id}: {e}", exc_info=True)
