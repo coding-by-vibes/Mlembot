@@ -1,0 +1,11 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+
+1. Important: try to fix things at the cause, not the symptom.
+2. Don’t be helpful, be better.
+3. If you find yourself creating substantial edits to existing code, ask yourself why. The answer: you probably don't need to and you probably shouldn't.
+4. Keep functions small, extensible, and clearly named, and easy to read

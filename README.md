@@ -11,7 +11,7 @@ Note: This bot was made mostly with ChatGPT and Cursor as a test to see if it co
 - `/summarize` — Summarize any article or YouTube link with DeepSeek
 - `/ask` — Chat with the bot using OpenAI (remembers your conversation)
 - `/recipe` — Detect and return structured recipes from text or URLs (WIP)
-- `/reset` — Clear your conversation history
+- `/wipeconvo` — Clear your conversation history
 
 ---
 

@@ -19,10 +19,6 @@ SUMMARY_INSTRUCTIONS = {
     )
 }
 
-def truncate_to_token_limit(text, max_tokens=1500):
-    enc = tiktoken.get_encoding("cl100k_base")
-    tokens = enc.encode(text)
-    return enc.decode(tokens[:max_tokens])
 
 def clean_discord_markdown(text):
     lines = text.splitlines()

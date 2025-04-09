@@ -6,29 +6,29 @@ import logging
 from googleapiclient.discovery import build
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import TextFormatter
-from summarizer.deepseek_pipeline_tokenaware import summarize_article_full
+from summarizer.summarizer import summarize_article_full
 from config.config import YOUTUBE_API_KEY
 import openai
-from utils.recipe import RecipeDetector
+# from utils.recipe import RecipeDetector
 import asyncio
 
-recipe_detector = RecipeDetector()
+# recipe_detector = RecipeDetector()
 
 
 async def process_youtube_video(video_id: str, summary_type: str = "default") -> dict:
     transcript = YouTubeTranscriptApi.get_transcript(video_id)
     text = "\n".join(entry["text"] for entry in transcript)
-    print("[Transcript Preview]", text[:300])
+    print("[Transcript Preview]", text[:50], "...")
 
-    recipe = recipe_detector.detect_recipe(text)
-    if recipe:
-        return {
-            "type": "recipe",
-            "title": recipe["title"],
-            "markdown": recipe["markdown"],
-            "raw": recipe,
-            "source": f"https://www.youtube.com/watch?v={video_id}"
-        }
+    # recipe = recipe_detector.detect_recipe(text)
+    # if recipe:
+    #     return {
+    #         "type": "recipe",
+    #         "title": recipe["title"],
+    #         "markdown": recipe["markdown"],
+    #         "raw": recipe,
+    #         "source": f"https://www.youtube.com/watch?v={video_id}"
+    #     }
 
     video_url = f"https://www.youtube.com/watch?v={video_id}"
     video_title = f"YouTube Video ({video_id})"

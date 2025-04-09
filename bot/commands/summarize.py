@@ -4,7 +4,7 @@ from urllib.parse import urlparse, parse_qs
 from scraper.article_utils import get_article_as_json
 from utils.youtube import process_youtube_video
 from utils.discord_utils import send_discord_safe
-from summarizer.deepseek_pipeline_tokenaware import summarize_article_full
+from summarizer.summarizer import summarize_article_full
 from typing import Optional
 
 SUMMARY_LEVELS = {

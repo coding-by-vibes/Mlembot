@@ -1,5 +1,7 @@
 # utils/discord_utils.py
 
+import re
+
 async def send_discord_safe(interaction, full_text: str, wrap_in_markdown: bool = False):
     """Send one or more messages to Discord, respecting the 2000 character limit."""
     if len(full_text.strip()) == 0:
