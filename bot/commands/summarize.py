@@ -6,6 +6,7 @@ from utils.youtube import process_youtube_video
 from utils.discord_utils import send_discord_safe
 from summarizer.summarizer import summarize_article_full
 from typing import Optional
+import logging
 
 SUMMARY_LEVELS = {
     "tl;dr": "Return only 1–2 sentences with key takeaways.",
@@ -19,10 +20,11 @@ LIMITS = {
     "detailed": 1800
 }
 
-
 class Summarizer(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
 
     @app_commands.command(name="summarize", description="Summarize an article or YouTube video.")
     @app_commands.describe(url="The link to summarize")
@@ -54,7 +56,7 @@ class Summarizer(commands.Cog):
                 result = await process_youtube_video(video_id, summary_type=summary_key)
                 if not isinstance(result, dict):
                     return await interaction.followup.send("❌ YouTube summary failed: Unexpected response format.")
-
+                
                 return await send_discord_safe(interaction, result["summary"])
 
             except Exception as e:
@@ -81,7 +83,6 @@ class Summarizer(commands.Cog):
             import traceback
             print(traceback.format_exc())
             await interaction.followup.send(f"❌ Article summary failed: {str(e)}")
-
 
 async def setup(bot):
     await bot.add_cog(Summarizer(bot))

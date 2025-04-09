@@ -1,6 +1,8 @@
-# 🤖 Mlembot — AI-Powered Discord Bot
+# 🤖 Mlembot — AI-Powered Discord Summarizer Bot
 
 A Discord bot that summarizes articles, YouTube videos, and answers questions using DeepSeek and OpenAI.
+
+It utilizes a DeepSeek API for summarization due to its lower token cost and OpenAI for questions, however you can change these to whatever models you'd like :)
 
 Note: This bot was made mostly with ChatGPT and Cursor as a test to see if it could produce working code
 
