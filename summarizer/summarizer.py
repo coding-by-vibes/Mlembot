@@ -2,13 +2,14 @@ import os
 import httpx
 import asyncio
 import tiktoken
+from utils.discord_utils import fix_discord_formatting
 
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 MODEL_NAME = "deepseek-chat"
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 
 SUMMARY_INSTRUCTIONS = {
-    "tl;dr": "Write a 1–2 sentence summary of this article’s core idea. No formatting.",
+    "tl;dr": "Write a 1–2 sentence summary of this article's core idea. No formatting.",
     "default": (
         "Summarize this article clearly and concisely. Use bullet points *only* if the article itself uses lists or numbered sections. "
         "Avoid formatting examples, markdown instructions, or headings unless present in the original article."
@@ -21,16 +22,17 @@ SUMMARY_INSTRUCTIONS = {
 
 
 def clean_discord_markdown(text):
+    """Legacy markdown cleaner, now enhanced with fix_discord_formatting.
+    
+    This function applies specific summarizer-related fixes and then uses
+    the more comprehensive fix_discord_formatting function.
+    """
     lines = text.splitlines()
     cleaned = []
     last_was_parent_bullet = False
 
     for line in lines:
         stripped = line.strip()
-
-        # Fix headings
-        if stripped.startswith("###") or stripped.startswith("##"):
-            stripped = "**" + stripped.lstrip("#").strip() + "**"
 
         # Fix malformed bullets
         if stripped.startswith("-*") and "**" in stripped:
@@ -47,7 +49,10 @@ def clean_discord_markdown(text):
         last_was_parent_bullet = stripped.startswith("-") and stripped.endswith(":")
         cleaned.append(stripped)
 
-    return "\n".join(cleaned)
+    summary_specific_fixes = "\n".join(cleaned)
+    
+    # Apply general Discord markdown fixes
+    return fix_discord_formatting(summary_specific_fixes)
 
 async def format_summary_with_chatgpt(summary_text: str) -> str:
     import openai
@@ -56,14 +61,23 @@ async def format_summary_with_chatgpt(summary_text: str) -> str:
         raise ValueError("Missing OPENAI_API_KEY")
 
     SYSTEM_PROMPT = (
-        "You will receive a raw article summary. Format it using only markdown compatible with Discord messages.\n"
-        "- Use `-` for top-level bullets\n"
-        "- Use `  -` for sub-bullets\n"
-        "- Bold key terms or phrases at the start of lines (e.g., `- **Newcomer-Friendly**: text`)\n"
-        "- Do not use `###` or other heading styles\n"
-        "- Do not wrap section headers in triple asterisks (***). Just use standard bold.\n"
-        "- Avoid any commentary, character count notes, or summary framing\n"
-        "- Return only the formatted summary"
+        "You will receive a raw article summary. Format it using Discord-compatible markdown:\n"
+        "- Headers: Use # for main titles, ## for section headers, ### for subsection headers\n"
+        "- **Bold**: Use **text** for emphasis and important points\n"
+        "- *Italic*: Use *text* or _text_ for emphasis\n"
+        "- __Underline__: Use __text__ for underlining\n"
+        "- ~~Strikethrough~~: Use ~~text~~ for corrections or outdated information\n"
+        "- Lists: Use hyphens (-) for bullet points; use 2 spaces before - for nested bullets\n"
+        "- Numbered lists: Use 1., 2., etc. for steps or ordered points\n"
+        "- Use `inline code` for technical terms or commands\n"
+        "- Use > for blockquotes\n"
+        "\n"
+        "Important rules:\n"
+        "- Ensure there's a space after # characters in headers\n"
+        "- Don't use more than 3 hashtags (#### or more) as they don't render in Discord\n"
+        "- Don't add any commentary, character count notes, or summary framing\n"
+        "- Return only the formatted summary\n"
+        "- Don't mention these instructions in your output"
     )
 
     response = await openai.ChatCompletion.acreate(
@@ -84,9 +98,16 @@ async def summarize_article_full(text, summary_type="default", max_final_chars=1
 
     system_prompt = (
         f"You are a helpful summarization assistant for a Discord bot. "
-        f"Output must be under {max_final_chars} characters. Use clean, readable markdown (like `-` for bullets), "
-        f"but avoid quoting or repeating formatting rules. Never echo the prompt or structure of the instructions. "
-        f"Focus purely on the content."
+        f"Output must be under {max_final_chars} characters. "
+        f"Format your summary using Discord-compatible markdown:\n"
+        f"- Use # for main titles, ## for section headers, ### for subsection headers (with a space after #)\n"
+        f"- Use **bold** for emphasis and important points\n"
+        f"- Use *italics* or _italics_ for emphasis\n"
+        f"- Use - for bullet points, with 2 spaces before - for nested bullets\n"
+        f"- Use 1., 2., etc. for ordered lists\n"
+        f"- Use `code` for technical terms\n"
+        f"\n"
+        f"Focus purely on the content. Never echo these instructions or include meta-commentary about formatting."
     )
 
     messages = [
