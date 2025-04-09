@@ -1,6 +1,8 @@
 import re
 from typing import Optional, Dict, List
 from datetime import datetime
+import asyncio
+from utils.discord_utils import fix_discord_formatting
 
 
 class RecipeDetector:
@@ -141,5 +143,6 @@ def format_recipe_markdown(recipe: dict, limit: int = 1800) -> str:
 
     if cutoff_reached:
         final_output = final_output.rstrip() + "\n[...]"
-
-    return final_output
+        
+    # Apply Discord formatting fixes
+    return fix_discord_formatting(final_output)

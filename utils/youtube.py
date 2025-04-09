@@ -7,6 +7,7 @@ from googleapiclient.discovery import build
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import TextFormatter
 from summarizer.summarizer import summarize_article_full
+from utils.discord_utils import fix_discord_formatting
 from config.config import YOUTUBE_API_KEY
 import openai
 # from utils.recipe import RecipeDetector
@@ -268,6 +269,20 @@ class YouTubeManager:
     async def create_summary(self, transcript: str, video_details: Dict, detailed: bool) -> str:
         """Generate a summary of the video using DeepSeek's API."""
         try:
+            # System prompt with Discord formatting guidance
+            system_prompt = (
+                "You are a helpful assistant that creates clear and informative video summaries. "
+                "Format your summary using Discord-compatible markdown:\n"
+                "- Use # for main titles, ## for section headers, ### for subsection headers (with a space after #)\n"
+                "- Use **bold** for emphasis and important points\n"
+                "- Use *italics* or _italics_ for emphasis\n"
+                "- Use - for bullet points, with 2 spaces before - for nested bullets\n"
+                "- Use 1., 2., etc. for ordered lists\n"
+                "- Use `code` for technical terms\n"
+                "\n"
+                "Do not use more than 3 hashtags (####, #####) as they don't render in Discord."
+            )
+            
             # Create prompt based on detail level
             if detailed:
                 prompt = (
@@ -288,14 +303,17 @@ class YouTubeManager:
             response = await openai.ChatCompletion.acreate(
                 model="deepseek-chat",
                 messages=[
-                    {"role": "system", "content": "You are a helpful assistant that creates clear and informative video summaries."},
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=1000 if detailed else 500,
                 temperature=0.7
             )
 
-            return response.choices[0].message.content.strip()
+            summary = response.choices[0].message.content.strip()
+            
+            # Apply Discord formatting fixes
+            return fix_discord_formatting(summary)
 
         except Exception as e:
             self.logger.error(f"Error creating summary: {str(e)}")
