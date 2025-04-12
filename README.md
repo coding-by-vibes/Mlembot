@@ -6,7 +6,7 @@ It utilizes a DeepSeek API for summarization due to its lower token cost and Ope
 
 Note: This bot was made mostly with ChatGPT and Cursor as a test to see if it could produce working code
 
-[Like this project? Buy me a coffee!](https://buymeacoffee.com/9bcdptywfh)
+[Like this project? Buy me a coffee!](https://buymeacoffee.com/vibecoding)
 
 ---
 
